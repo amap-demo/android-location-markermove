@@ -60,10 +60,15 @@ public class LocOverlay {
      * 平滑移动动画
      */
     private void moveLocationMarker() {
+        final LatLng from = locMarker.getPosition();
+        final LatLng to = point;
         TranslateAnimation animation = new TranslateAnimation(point){};//创建平移动画，设置平移终点坐标
         animation.setInterpolator(new LinearInterpolator(){
             public float getInterpolation(float input) {
-                locCircle.setCenter(locMarker.getPosition());
+                double dlat = to.latitude- from.latitude;
+                double dlng = to.longitude-from.longitude;
+                LatLng target = new LatLng(from.latitude + dlat * input, from.longitude + dlng * input);
+                locCircle.setCenter(target);
                 return input;
             }
         });//设置差值方式
