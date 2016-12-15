@@ -2,6 +2,7 @@ package com.amap.android_location_markermove;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -18,6 +19,8 @@ import com.amap.api.maps.LocationSource;
 import com.amap.api.maps.MapView;
 import com.amap.api.maps.model.BitmapDescriptor;
 import com.amap.api.maps.model.BitmapDescriptorFactory;
+import com.amap.api.maps.model.Circle;
+import com.amap.api.maps.model.CircleOptions;
 import com.amap.api.maps.model.LatLng;
 import com.amap.api.maps.model.Marker;
 import com.amap.api.maps.model.MarkerOptions;
@@ -26,14 +29,16 @@ import com.amap.api.maps.model.animation.TranslateAnimation;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class MainActivity extends AppCompatActivity implements AMap.OnMapLoadedListener, AMap.OnMapClickListener, LocationSource, AMapLocationListener {
+public class MainActivity extends AppCompatActivity implements AMap.OnMapClickListener, LocationSource, AMapLocationListener {
     private AMap aMap;
     private MapView mapView;
     private AMapLocationClient mLocationClient;
     private AMapLocationClientOption mLocationOption;
 
-    private Marker locMarker;
     private LatLng mylocation;
+    private LocOverlay mylocationoverlay;
+
+    private AMapLocation myaMapLocation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,20 +60,11 @@ public class MainActivity extends AppCompatActivity implements AMap.OnMapLoadedL
         if (aMap == null) {
             aMap = mapView.getMap();
         }
-        aMap.setOnMapLoadedListener(this);
         aMap.setOnMapClickListener(this);
         aMap.setLocationSource(this);// 设置定位监听
         aMap.getUiSettings().setMyLocationButtonEnabled(true);// 设置默认定位按钮是否显示
         aMap.setMyLocationEnabled(true);
-    }
-
-    private void addMarker(LatLng point) {
-        Bitmap bMap = BitmapFactory.decodeResource(this.getResources(),
-                R.drawable.navi_map_gps_locked);
-        BitmapDescriptor des = BitmapDescriptorFactory.fromBitmap(bMap);
-
-        locMarker = aMap.addMarker(new MarkerOptions().position(point).icon(des)
-                .anchor(0.5f, 0.5f));
+        mylocationoverlay = LocOverlay.getInstance(aMap);//自定义定位overlay
     }
 
     /**
@@ -106,10 +102,7 @@ public class MainActivity extends AppCompatActivity implements AMap.OnMapLoadedL
         super.onDestroy();
         mapView.onDestroy();
         deactivate();
-    }
-
-    @Override
-    public void onMapLoaded() {
+        mylocationoverlay.remove();
     }
 
     /**
@@ -118,15 +111,17 @@ public class MainActivity extends AppCompatActivity implements AMap.OnMapLoadedL
      */
     @Override
     public void onMapClick(LatLng latLng) {
-//        moveLocationMarker(latLng);
-
+        //手动模拟位置改变效果,仅用于测试
+//        myaMapLocation.setLatitude(latLng.latitude);
+//        myaMapLocation.setLongitude(latLng.longitude);
+//        mylocationoverlay.locationChanged(myaMapLocation);
     }
 
     @Override
     public void activate(OnLocationChangedListener onLocationChangedListener) {
         startlocation();
         if (mylocation != null)
-            aMap.moveCamera(CameraUpdateFactory.changeLatLng(mylocation));
+            aMap.moveCamera(CameraUpdateFactory.newLatLngZoom(mylocation, 17));
     }
 
     @Override
@@ -142,7 +137,6 @@ public class MainActivity extends AppCompatActivity implements AMap.OnMapLoadedL
      * 开始定位。
      */
     private void startlocation() {
-
         if (mLocationClient == null) {
             mLocationClient = new AMapLocationClient(this);
             mLocationOption = new AMapLocationClientOption();
@@ -166,34 +160,18 @@ public class MainActivity extends AppCompatActivity implements AMap.OnMapLoadedL
      */
     @Override
     public void onLocationChanged(AMapLocation aMapLocation) {
+        myaMapLocation = aMapLocation;
         if (aMapLocation != null) {
             if (aMapLocation != null && aMapLocation.getErrorCode() == 0) {
                 mylocation = new LatLng(aMapLocation.getLatitude(),
                         aMapLocation.getLongitude());
-                moveLocationMarker(mylocation);
+                mylocationoverlay.locationChanged(aMapLocation);//设置定位图标、精度圈以及移动效果
             } else {
                 String errText = "定位失败," + aMapLocation.getErrorCode() + ": "
                         + aMapLocation.getErrorInfo();
                 Toast.makeText(MainActivity.this, errText, Toast.LENGTH_SHORT).show();
                 Log.e("AmapErr", errText);
             }
-        }
-    }
-
-    /**
-     * 移动定位Marker
-     * @param mylocation 移动的终点经纬度。
-     */
-    private void moveLocationMarker(LatLng mylocation) {
-        if (locMarker == null){
-            //如果是第一次绘制marker，只添加marker。
-            addMarker(mylocation);
-        } else{
-            TranslateAnimation animation = new TranslateAnimation(mylocation);//创建平移动画，设置平移终点坐标
-            animation.setInterpolator(new LinearInterpolator());//设置差值方式
-            animation.setDuration(1000);//设置动画时长，单位ms
-            locMarker.setAnimation(animation);//给marker添加动画
-            locMarker.startAnimation();//开始移动
         }
     }
 }
