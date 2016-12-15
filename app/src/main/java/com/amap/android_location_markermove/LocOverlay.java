@@ -1,7 +1,12 @@
 package com.amap.android_location_markermove;
 
+import android.animation.TypeEvaluator;
+import android.animation.ValueAnimator;
+import android.animation.ValueAnimator.AnimatorUpdateListener;
 import android.graphics.Color;
+import android.view.animation.Animation;
 import android.view.animation.LinearInterpolator;
+import android.view.animation.TranslateAnimation;
 
 import com.amap.api.location.AMapLocation;
 import com.amap.api.maps.AMap;
@@ -12,8 +17,6 @@ import com.amap.api.maps.model.CircleOptions;
 import com.amap.api.maps.model.LatLng;
 import com.amap.api.maps.model.Marker;
 import com.amap.api.maps.model.MarkerOptions;
-import com.amap.api.maps.model.animation.Animation;
-import com.amap.api.maps.model.animation.TranslateAnimation;
 
 /**
  * Created by my94493 on 2016/12/15.
@@ -60,34 +63,20 @@ public class LocOverlay {
      * 平滑移动动画
      */
     private void moveLocationMarker() {
-        final LatLng from = locMarker.getPosition();
-        final LatLng to = point;
-        TranslateAnimation animation = new TranslateAnimation(point){};//创建平移动画，设置平移终点坐标
-        animation.setInterpolator(new LinearInterpolator(){
-            public float getInterpolation(float input) {
-                double dlat = to.latitude- from.latitude;
-                double dlng = to.longitude-from.longitude;
-                LatLng target = new LatLng(from.latitude + dlat * input, from.longitude + dlng * input);
+        final LatLng startPoint  = locMarker.getPosition();
+        final LatLng endPoint  = point;
+        ValueAnimator anim = ValueAnimator.ofObject(new PointEvaluator(), startPoint, endPoint);
+        anim.addUpdateListener(new AnimatorUpdateListener(){
+            @Override
+            public void onAnimationUpdate(ValueAnimator valueAnimator) {
+                LatLng target = (LatLng) valueAnimator.getAnimatedValue();
                 locCircle.setCenter(target);
-                return input;
-            }
-        });//设置差值方式
-        animation.setAnimationListener(new Animation.AnimationListener() {
-            @Override
-            public void onAnimationStart() {
-
-            }
-
-            @Override
-            public void onAnimationEnd() {
-                locCircle.setCenter(locMarker.getPosition());
+                locMarker.setPosition(target);
             }
         });
-        animation.setDuration(1000);//设置动画时长，单位ms
-        locMarker.setAnimation(animation);//给marker添加动画
-        locMarker.startAnimation();//开始移动
+        anim.setDuration(1000);
+        anim.start();
     }
-
     /**
      * 添加定位marker
      */
@@ -97,7 +86,6 @@ public class LocOverlay {
                 .anchor(0.5f, 0.5f));
 
     }
-
     /**
      * 添加定位精度圈
      */
@@ -113,6 +101,18 @@ public class LocOverlay {
         }
         if (locCircle != null){
             locCircle.remove();
+        }
+    }
+
+    public class PointEvaluator implements TypeEvaluator {
+        @Override
+        public Object evaluate(float fraction, Object startValue, Object endValue) {
+            LatLng startPoint = (LatLng) startValue;
+            LatLng endPoint = (LatLng) endValue;
+            double x = startPoint.latitude + fraction * (endPoint.latitude - startPoint.latitude);
+            double y = startPoint.longitude + fraction * (endPoint.longitude - startPoint.longitude);
+            LatLng point = new LatLng(x, y);
+            return point;
         }
     }
 }
