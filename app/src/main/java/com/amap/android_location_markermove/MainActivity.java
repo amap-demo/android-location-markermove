@@ -146,6 +146,7 @@ public class MainActivity extends AppCompatActivity implements AMap.OnMapClickLi
             mLocationOption.setLocationMode(AMapLocationClientOption.AMapLocationMode.Hight_Accuracy);
             //设置为单次定位
             mLocationOption.setOnceLocation(false);
+            mLocationOption.setMockEnable(true);
             // 设置定位参数
             mLocationClient.setLocationOption(mLocationOption);
             mLocationClient.startLocation();
@@ -165,6 +166,7 @@ public class MainActivity extends AppCompatActivity implements AMap.OnMapClickLi
             if (aMapLocation != null && aMapLocation.getErrorCode() == 0) {
                 mylocation = new LatLng(aMapLocation.getLatitude(),
                         aMapLocation.getLongitude());
+//                Toast.makeText(this, "　"+aMapLocation.getLocationType(), Toast.LENGTH_SHORT).show();
                 mylocationoverlay.locationChanged(aMapLocation);//设置定位图标、精度圈以及移动效果
             } else {
                 String errText = "定位失败," + aMapLocation.getErrorCode() + ": "
