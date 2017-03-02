@@ -4,6 +4,7 @@ import android.animation.TypeEvaluator;
 import android.animation.ValueAnimator;
 import android.animation.ValueAnimator.AnimatorUpdateListener;
 import android.graphics.Color;
+import android.util.Log;
 import android.view.animation.Animation;
 import android.view.animation.LinearInterpolator;
 import android.view.animation.TranslateAnimation;
@@ -30,15 +31,8 @@ public class LocOverlay {
     private Circle locCircle;
     private AMap aMap;
 
-    private LocOverlay(AMap amap) {
+    public LocOverlay(AMap amap) {
         this.aMap = amap;
-    }
-
-    public static LocOverlay getInstance(AMap amap){
-        if (mlocoverlay == null) {
-            mlocoverlay = new LocOverlay(amap);
-        }
-        return mlocoverlay;
     }
 
     /**
@@ -98,9 +92,12 @@ public class LocOverlay {
     public void remove(){
         if (locMarker != null){
             locMarker.remove();
+            locMarker.destroy();
+            locMarker = null;
         }
         if (locCircle != null){
             locCircle.remove();
+            locCircle = null;
         }
     }
 

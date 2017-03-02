@@ -64,7 +64,7 @@ public class MainActivity extends AppCompatActivity implements AMap.OnMapClickLi
         aMap.setLocationSource(this);// 设置定位监听
         aMap.getUiSettings().setMyLocationButtonEnabled(true);// 设置默认定位按钮是否显示
         aMap.setMyLocationEnabled(true);
-        mylocationoverlay = LocOverlay.getInstance(aMap);//自定义定位overlay
+        mylocationoverlay = new LocOverlay(aMap);//自定义定位overlay
     }
 
     /**
@@ -83,6 +83,7 @@ public class MainActivity extends AppCompatActivity implements AMap.OnMapClickLi
     protected void onPause() {
         super.onPause();
         mapView.onPause();
+        deactivate();
     }
 
     /**
@@ -100,9 +101,9 @@ public class MainActivity extends AppCompatActivity implements AMap.OnMapClickLi
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mapView.onDestroy();
-        deactivate();
         mylocationoverlay.remove();
+        mylocationoverlay = null;
+        mapView.onDestroy();
     }
 
     /**
@@ -166,7 +167,6 @@ public class MainActivity extends AppCompatActivity implements AMap.OnMapClickLi
             if (aMapLocation != null && aMapLocation.getErrorCode() == 0) {
                 mylocation = new LatLng(aMapLocation.getLatitude(),
                         aMapLocation.getLongitude());
-//                Toast.makeText(this, "　"+aMapLocation.getLocationType(), Toast.LENGTH_SHORT).show();
                 mylocationoverlay.locationChanged(aMapLocation);//设置定位图标、精度圈以及移动效果
             } else {
                 String errText = "定位失败," + aMapLocation.getErrorCode() + ": "
