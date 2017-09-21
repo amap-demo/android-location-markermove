@@ -41,6 +41,7 @@ public class LocOverlay {
      */
     public void locationChanged (AMapLocation aMapLocation) {
         LatLng location = new LatLng(aMapLocation.getLatitude(), aMapLocation.getLongitude());
+
         this.point = location;
         this.radius = aMapLocation.getAccuracy();
         if (locMarker == null) {
@@ -49,6 +50,8 @@ public class LocOverlay {
         if (locCircle == null) {
             addCircle();
         }
+        float bearing= aMapLocation.getBearing();
+        locMarker.setRotateAngle(bearing);
         moveLocationMarker();
         locCircle.setRadius(radius);
     }
@@ -59,13 +62,18 @@ public class LocOverlay {
     private void moveLocationMarker() {
         final LatLng startPoint  = locMarker.getPosition();
         final LatLng endPoint  = point;
+        float rotate = getRotate(startPoint, endPoint);
+        locMarker.setRotateAngle(360 - rotate + aMap.getCameraPosition().bearing);
         ValueAnimator anim = ValueAnimator.ofObject(new PointEvaluator(), startPoint, endPoint);
         anim.addUpdateListener(new AnimatorUpdateListener(){
             @Override
             public void onAnimationUpdate(ValueAnimator valueAnimator) {
                 LatLng target = (LatLng) valueAnimator.getAnimatedValue();
-                locCircle.setCenter(target);
-                locMarker.setPosition(target);
+                if (locCircle != null){
+                    locCircle.setCenter(target);
+                }
+                if (locMarker!= null)
+                    locMarker.setPosition(target);
             }
         });
         anim.setDuration(1000);
@@ -111,5 +119,25 @@ public class LocOverlay {
             LatLng point = new LatLng(x, y);
             return point;
         }
+    }
+
+    /**
+     * 根据经纬度计算需要偏转的角度
+     *
+     * @param curPos
+     * @param nextPos
+     * @return
+     */
+    private float getRotate(LatLng curPos, LatLng nextPos) {
+        if(curPos==null||nextPos==null){
+            return 0;
+        }
+        double x1 = curPos.latitude;
+        double x2 = nextPos.latitude;
+        double y1 = curPos.longitude;
+        double y2 = nextPos.longitude;
+
+        float rotate = (float) (Math.atan2(y2 - y1, x2 - x1) / Math.PI * 180);
+        return rotate;
     }
 }
